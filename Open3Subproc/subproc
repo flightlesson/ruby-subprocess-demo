@@ -1,0 +1,65 @@
+#! /bin/bash
+myname=$(basename $0)
+mydir=$(cd $(dirname $0) && pwd)
+
+# The jar file's name matches $jarfilebasename*.jar
+jarfilebasename=Open3Subproc
+# The application's main class
+mainclass=example.com.open3subproc.App
+
+JAVA=${JAVA:-$(which java)}
+
+function usage() {
+    cat <<- xxx
+	Usage: $myname [+h] [+v] [+noop] <application-args>
+
+	Runs the ${mainclass} application.
+
+	  +h - print this message and stops.
+	  +v - print the java command before invocation.
+	  +noop - don't actually invoke the java command.
+	  +jar - print the path to the jar file and exit.
+
+	These environment variables are used to alter behavior:
+	  JAVA - identifies the java command [$java]
+	  MYAPPJAR
+
+xxx
+
+}
+
+# The jarfile's name and location might be different during development and after installation;
+# this script should work unaltered either way.
+# Test a specific jar file by placing it in the current working directory.
+# During development the jar file is under "target" (maven's default).
+# After installation the jar file is in the same directory as this script.
+function findJarFile() for c in ./$jarfilebasename*.jar \
+                                target/$jarfilebasename-*-with-dependencies.jar \
+                                $mydir/$jarfilebasename*.jar \
+                                $mydir/target/$jarfilebasename-*-with-dependencies.jar; do
+                         [ -r $c ] && echo $c && return
+                       done
+[ -z "$MYAPPJAR" ] && MYAPPJAR=$(findJarFile || echo "did-not-find-the-jar-file")
+
+verbose=
+noop=
+while [ -n "$1" ]; do
+  case "$1" in
+    +h) usage; exit 0 ;;
+    +v) verbose=verbose ;;
+    +noop) noop=noop; verbose=noop ;;
+    +main) mainclass=`shift`;;
+    *)  break ;;
+  esac
+  shift
+done
+
+if [ ! -r "$MYAPPJAR" ]; then
+  echo "Couldn't find the jar file!"
+  usage
+  exit 1;
+fi
+
+cmd="$JAVA -cp $MYAPPJAR $mainclass"
+[ -z "$verbose" ] || echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH $cmd"
+[ -z "$noop" ] && eval $cmd
