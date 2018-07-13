@@ -1,0 +1,7 @@
+#! /usr/bin/env ruby
+
+pwd = Dir.pwd
+puts "exec-demo: ARGV[0]=#{ARGV[0]}, pwd=#{pwd}, ENV['USERNAME']=#{ENV['USERNAME']}, ENV['XYZ']=#{ENV['XYZ']}"
+
+exec("cd /tmp && XYZ=abc #{pwd}/exec-demo 123") unless ARGV[0]=='123'
+puts "after exec (ARGV[0]=#{ARGV[0]})"
